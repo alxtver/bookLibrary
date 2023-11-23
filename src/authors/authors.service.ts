@@ -4,7 +4,6 @@ import { UpdateAuthorDto } from './dto/update-author.dto'
 import { Author } from './entities/author.entity'
 import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
-import { v4 as uuidv4 } from 'uuid'
 
 @Injectable()
 export class AuthorsService {
