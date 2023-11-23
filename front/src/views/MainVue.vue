@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import GenerateApi from '../../api/GenerateApi'
+import AuthorApi from '@/api/AuthorApi'
 
 const onClick = async (): Promise<void> => {
-    await GenerateApi.generate()
+    await AuthorApi.addAuthor({ name: 'Иван', fullName: 'Петров' })
 }
 </script>
 
