@@ -7,6 +7,7 @@ import { AuthorsModule } from './authors/authors.module'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import * as process from 'process'
 import { Author } from './authors/entities/author.entity'
+import { ScanningModule } from './scanning/scanning.module'
 
 @Module({
     imports: [
@@ -25,7 +26,8 @@ import { Author } from './authors/entities/author.entity'
             autoLoadEntities: true,
             synchronize: true
         }),
-        AuthorsModule
+        AuthorsModule,
+        ScanningModule
     ],
     controllers: [AppController],
     providers: [AppService]

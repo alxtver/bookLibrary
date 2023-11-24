@@ -7,7 +7,7 @@ export class ScanningController {
     constructor(private readonly scanningService: ScanningService) {}
     @Get('/scan')
     async scan(@Res() res: Response) {
-        await this.scanningService.scan()
-        res.status(HttpStatus.OK)
+        const data = await this.scanningService.scan()
+        res.status(HttpStatus.OK).json(data)
     }
 }
