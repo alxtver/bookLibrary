@@ -6,8 +6,8 @@ export class Author {
     id: string
 
     @Column()
-    name: string
+    firstName: string
 
     @Column()
-    fullName: string
+    lastName: string
 }
