@@ -7,6 +7,8 @@ import { CreateGenreDto } from '../genres/dto/create-genre.dto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Author } from '../authors/entities/author.entity'
 import { Repository } from 'typeorm'
+import { Genre, Genres } from '../genres/entities/genre.entity'
+import { Book } from '../books/entities/book.entity'
 
 export interface BookInfo {
     title: string
@@ -14,28 +16,42 @@ export interface BookInfo {
     path: string
     authors: Array<CreateAuthorDto>
     genres: Array<CreateGenreDto>
+    realiseDate: Date
 }
 
 @Injectable()
 export class ScanningService {
     constructor(
         @InjectRepository(Author)
-        private authorsRepository: Repository<Author>
+        private authorsRepository: Repository<Author>,
+
+        @InjectRepository(Genre)
+        private genresRepository: Repository<Genre>,
+
+        @InjectRepository(Book)
+        private booksRepository: Repository<Book>
     ) {}
 
     public async scan(): Promise<Array<string>> {
         const files = await this.readFiles()
-        files.forEach((file: fs.Dirent): void => {
-            this.readInfo([file.path, file.name].join('\\'), (bookInfo: BookInfo): void => {
-                this.createAuthors(bookInfo)
-            })
-        })
+        for (const file of files) {
+            const bookInfo = await this.readInfo([file.path, file.name].join('\\'))
+            if (!bookInfo) {
+                continue
+            }
+            console.log('read book ->>>', bookInfo.title)
+            const authors = await this.createAuthors(bookInfo)
+            const genres = await this.createGenres(bookInfo)
+            await this.createBook(bookInfo, authors, genres)
+        }
         return files
     }
 
     private async readFiles(): Promise<any> {
-        const dir = '\\\\192.168.1.99\\downloads\\test'
+        const dir = '\\\\192.168.1.99\\downloads\\books'
+        console.log('Начали читать файлы')
         const readDir = await readdir(dir, { recursive: true, withFileTypes: true })
+        console.log('end reed files')
         return readDir.filter(
             (item: fs.Dirent): boolean => item.isFile() && item.name.includes('.fb2')
         )
@@ -47,21 +63,23 @@ export class ScanningService {
      * @param callback
      * @private
      */
-    private async readInfo(filePath: string, callback: (result: any) => void): Promise<any> {
+    private async readInfo(filePath: string): Promise<BookInfo | undefined> {
         const parser = new Parser()
-        fs.readFile(filePath, (err: Error, data: Buffer): void => {
-            parser.parseString(data, (err: Error, result: any): void => {
-                const titleInfo = result.FictionBook.description[0]['title-info'][0]
-                const bookInfo: BookInfo = {
-                    title: this.getBookTitle(titleInfo),
-                    annotation: this.getBookAnnotation(titleInfo),
-                    path: filePath,
-                    authors: this.getAuthors(titleInfo),
-                    genres: this.getGenres(titleInfo)
-                }
-                callback(bookInfo)
-            })
-        })
+        const data = fs.readFileSync(filePath)
+        try {
+            const bookData = await parser.parseStringPromise(data)
+            const titleInfo = bookData.FictionBook.description[0]['title-info'][0]
+            return {
+                title: this.getBookTitle(titleInfo),
+                annotation: this.getBookAnnotation(titleInfo),
+                path: filePath,
+                authors: this.getAuthors(titleInfo),
+                genres: this.getGenres(titleInfo),
+                realiseDate: this.getRealiseDate(titleInfo)
+            }
+        } catch (e) {
+            return
+        }
     }
 
     /**
@@ -97,8 +115,9 @@ export class ScanningService {
      */
     private getGenres(titleInfo: any): CreateGenreDto[] {
         return titleInfo.genre.map((item: string): CreateGenreDto => {
+            const value = item.trim()
             return {
-                name: item
+                name: Genres[value] ? Genres[value] : value
             }
         })
     }
@@ -125,15 +144,103 @@ export class ScanningService {
      * @param bookInfo
      * @private
      */
-    private async createAuthors(bookInfo: BookInfo): Promise<void> {
+    private async createAuthors(bookInfo: BookInfo): Promise<Array<CreateAuthorDto & Author>> {
+        const authorsEntity: Array<CreateAuthorDto & Author> = []
         for (const author of bookInfo.authors) {
             const authorFromBase = await this.authorsRepository.findOne({
                 where: author
             })
             if (authorFromBase) {
+                authorsEntity.push(authorFromBase)
                 continue
             }
-            await this.authorsRepository.save(author)
+            authorsEntity.push(await this.authorsRepository.save(author))
+        }
+        return authorsEntity
+    }
+
+    /**
+     * Создание жанров
+     * @param bookInfo
+     * @private
+     */
+    private async createGenres(bookInfo: BookInfo): Promise<any> {
+        const genresEntity: Array<CreateGenreDto & Genre> = []
+        for (const genre of bookInfo.genres) {
+            const genreFromBase = await this.genresRepository.findOne({ where: genre })
+            if (
+                genreFromBase &&
+                !genresEntity.some(
+                    (item: CreateGenreDto & Genre): boolean => item.id === genreFromBase.id
+                )
+            ) {
+                genresEntity.push(genreFromBase)
+                continue
+            }
+            genresEntity.push(await this.genresRepository.save(genre))
+        }
+        return genresEntity
+    }
+
+    /**
+     * Получить дату выпуска книги
+     * @param titleInfo
+     * @private
+     */
+    private getRealiseDate(titleInfo: any): Date {
+        let date: Date = new Date()
+        if (titleInfo.date && titleInfo.date[0]) {
+            if (typeof titleInfo.date[0] === 'string') {
+                date = new Date(titleInfo.date[0])
+            }
+            if (titleInfo.date[0]['$'].value) {
+                date = new Date(titleInfo.date[0]['$'].value)
+            }
+            if (titleInfo.date[0]['_']) {
+                date = new Date(titleInfo.date[0]['_'])
+            }
+        }
+        if (date.toString() === 'Invalid Date') {
+            date = new Date()
+        }
+        return date
+    }
+
+    /**
+     * Создание книги
+     * @param bookInfo
+     * @param authors
+     * @param genres
+     * @private
+     */
+    private async createBook(
+        bookInfo: BookInfo,
+        authors: Array<CreateAuthorDto & Author>,
+        genres: any
+    ): Promise<void> {
+        const findBook = await this.booksRepository.findOne({
+            where: { title: bookInfo.title, authors }
+        })
+        if (findBook) {
+            return
+        }
+        try {
+            await this.booksRepository.save({
+                title: bookInfo.title,
+                annotation: bookInfo.annotation,
+                realiseDate: bookInfo.realiseDate,
+                authors,
+                genres
+            })
+        } catch (e) {
+            const b = {
+                title: bookInfo.title,
+                annotation: bookInfo.annotation,
+                realiseDate: bookInfo.realiseDate,
+                authors,
+                genres
+            }
+            console.error(e, b)
         }
     }
 }

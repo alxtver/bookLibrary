@@ -1,7 +1,9 @@
-import { Column, JoinTable, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, JoinTable, PrimaryGeneratedColumn } from "typeorm";
 import { ManyToMany } from 'typeorm'
 import { Author } from '../../authors/entities/author.entity'
+import { Genre } from '../../genres/entities/genre.entity'
 
+@Entity()
 export class Book {
     @PrimaryGeneratedColumn('uuid')
     id: string
@@ -9,11 +11,11 @@ export class Book {
     @Column()
     title: string
 
-    @Column()
-    description: string
+    @Column('mediumtext')
+    annotation: string
 
-    @Column()
-    added: Date
+    @CreateDateColumn()
+    created: Date
 
     @Column()
     realiseDate: Date
@@ -21,4 +23,8 @@ export class Book {
     @ManyToMany(() => Author)
     @JoinTable()
     authors: Author[]
+
+    @ManyToMany(() => Genre)
+    @JoinTable()
+    genres: Genre[]
 }

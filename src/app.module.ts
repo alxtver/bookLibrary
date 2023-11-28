@@ -30,8 +30,8 @@ import { Genre } from './genres/entities/genre.entity'
             autoLoadEntities: true,
             synchronize: true
         }),
-        AuthorsModule,
         ScanningModule,
+        AuthorsModule,
         BooksModule,
         GenresModule
     ],
