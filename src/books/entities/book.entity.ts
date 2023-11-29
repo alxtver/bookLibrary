@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinTable, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinTable, PrimaryGeneratedColumn } from 'typeorm'
 import { ManyToMany } from 'typeorm'
 import { Author } from '../../authors/entities/author.entity'
 import { Genre } from '../../genres/entities/genre.entity'

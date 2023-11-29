@@ -2,8 +2,8 @@ import ky from 'ky'
 
 class GenerateApi {
     private prefix = 'http://localhost:3000/scanning'
-    public async generate(): Promise<void> {
-        await ky.get('scan', { prefixUrl: this.prefix })
+    public async generate(path: string): Promise<void> {
+        await ky.get('scan', { searchParams: { path }, prefixUrl: this.prefix })
     }
 }
 

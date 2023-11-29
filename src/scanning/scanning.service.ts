@@ -32,7 +32,7 @@ export class ScanningService {
         private booksRepository: Repository<Book>
     ) {}
 
-    public async scan(): Promise<Array<string>> {
+    public async scan(path: string): Promise<Array<string>> {
         const files = await this.readFiles()
         for (const file of files) {
             const bookInfo = await this.readInfo([file.path, file.name].join('\\'))
@@ -60,7 +60,6 @@ export class ScanningService {
     /**
      * Чтение информации из файла
      * @param filePath
-     * @param callback
      * @private
      */
     private async readInfo(filePath: string): Promise<BookInfo | undefined> {
