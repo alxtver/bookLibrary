@@ -9,6 +9,7 @@ import { Author } from '../authors/entities/author.entity'
 import { Repository } from 'typeorm'
 import { Genre, Genres } from '../genres/entities/genre.entity'
 import { Book } from '../books/entities/book.entity'
+import { WebsocketGateway } from '../websocket/websocket.gateway'
 
 export interface BookInfo {
     title: string
@@ -29,32 +30,40 @@ export class ScanningService {
         private genresRepository: Repository<Genre>,
 
         @InjectRepository(Book)
-        private booksRepository: Repository<Book>
+        private booksRepository: Repository<Book>,
+
+        private webSocket: WebsocketGateway
     ) {}
 
     public async scan(path: string): Promise<Array<string>> {
-        const files = await this.readFiles()
+        this.webSocket.sendStart()
+        const files = await this.readFiles(path)
+        const numberOfFiles = files.length
+        let index = 0
         for (const file of files) {
+            index++
             const bookInfo = await this.readInfo([file.path, file.name].join('\\'))
             if (!bookInfo) {
                 continue
             }
-            console.log('read book ->>>', bookInfo.title)
+            this.webSocket.sendMessage(`Обрабатывается книга - ${bookInfo.title}`)
+            this.webSocket.sendProgress({ count: numberOfFiles, current: index })
             const authors = await this.createAuthors(bookInfo)
             const genres = await this.createGenres(bookInfo)
             await this.createBook(bookInfo, authors, genres)
         }
+        this.webSocket.sendEnd()
         return files
     }
 
-    private async readFiles(): Promise<any> {
-        const dir = '\\\\192.168.1.99\\downloads\\books'
-        console.log('Начали читать файлы')
-        const readDir = await readdir(dir, { recursive: true, withFileTypes: true })
-        console.log('end reed files')
-        return readDir.filter(
+    private async readFiles(path: string): Promise<any> {
+        this.webSocket.sendMessage('Поиск книг')
+        const readDir = await readdir(path, { recursive: true, withFileTypes: true })
+        const books = readDir.filter(
             (item: fs.Dirent): boolean => item.isFile() && item.name.includes('.fb2')
         )
+        this.webSocket.sendMessage(`Книг найдено - ${books.length}`)
+        return books
     }
 
     /**

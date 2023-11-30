@@ -12,6 +12,8 @@ import { BooksModule } from './books/books.module'
 import { GenresModule } from './genres/genres.module'
 import { Book } from './books/entities/book.entity'
 import { Genre } from './genres/entities/genre.entity'
+import { WebsocketGateway } from './websocket/websocket.gateway'
+import { WebsocketModule } from './websocket/websocket.module'
 
 @Module({
     imports: [
@@ -33,9 +35,10 @@ import { Genre } from './genres/entities/genre.entity'
         ScanningModule,
         AuthorsModule,
         BooksModule,
-        GenresModule
+        GenresModule,
+        WebsocketModule
     ],
     controllers: [AppController],
-    providers: [AppService]
+    providers: [AppService, WebsocketGateway]
 })
 export class AppModule {}

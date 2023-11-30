@@ -13,6 +13,7 @@ declare module 'vue' {
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
     ElMenuItemGroup: typeof import('element-plus/es')['ElMenuItemGroup']
+    ElProgress: typeof import('element-plus/es')['ElProgress']
     ElSubMenu: typeof import('element-plus/es')['ElSubMenu']
     MainMenu: typeof import('./src/components/menu/MainMenu.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
