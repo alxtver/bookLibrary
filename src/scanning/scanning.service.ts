@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { readdir } from 'node:fs/promises'
 import * as fs from 'fs'
-import { Parser } from 'xml2js'
 import { CreateAuthorDto } from '../authors/dto/create-author.dto'
 import { CreateGenreDto } from '../genres/dto/create-genre.dto'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -10,6 +9,7 @@ import { Repository } from 'typeorm'
 import { Genre, Genres } from '../genres/entities/genre.entity'
 import { Book } from '../books/entities/book.entity'
 import { WebsocketGateway } from '../websocket/websocket.gateway'
+import { XMLParser } from 'fast-xml-parser'
 
 export interface BookInfo {
     title: string
@@ -18,6 +18,7 @@ export interface BookInfo {
     authors: Array<CreateAuthorDto>
     genres: Array<CreateGenreDto>
     realiseDate: Date
+    image: string
 }
 
 @Injectable()
@@ -35,28 +36,23 @@ export class ScanningService {
         private webSocket: WebsocketGateway
     ) {}
 
-    public async scan(path: string): Promise<Array<string>> {
+    public async scan(path: string): Promise<Array<fs.Dirent>> {
         this.webSocket.sendStart()
+        // чтение файлов
         const files = await this.readFiles(path)
-        const numberOfFiles = files.length
-        let index = 0
-        for (const file of files) {
-            index++
-            const bookInfo = await this.readInfo([file.path, file.name].join('\\'))
-            if (!bookInfo) {
-                continue
-            }
-            this.webSocket.sendMessage(`Обрабатывается книга - ${bookInfo.title}`)
-            this.webSocket.sendProgress({ count: numberOfFiles, current: index })
-            const authors = await this.createAuthors(bookInfo)
-            const genres = await this.createGenres(bookInfo)
-            await this.createBook(bookInfo, authors, genres)
-        }
+        // парсинг файлов
+        await this.parseFiles(files)
+
         this.webSocket.sendEnd()
         return files
     }
 
-    private async readFiles(path: string): Promise<any> {
+    /**
+     * Чтение файлов из папки
+     * @param path
+     * @private
+     */
+    private async readFiles(path: string): Promise<Array<fs.Dirent>> {
         this.webSocket.sendMessage('Поиск книг')
         const readDir = await readdir(path, { recursive: true, withFileTypes: true })
         const books = readDir.filter(
@@ -67,26 +63,47 @@ export class ScanningService {
     }
 
     /**
+     * Парсинг файлов
+     * @param files
+     * @private
+     */
+    private async parseFiles(files: Array<fs.Dirent>): Promise<void> {
+        const numberOfFiles = files.length
+        let index = 0
+        for (const file of files) {
+            index++
+            const bookInfo = await this.readInfo([file.path, file.name].join('\\'))
+            if (!bookInfo || !bookInfo.authors) {
+                continue
+            }
+            this.webSocket.sendMessage(`Обрабатывается книга - ${bookInfo.title}`)
+
+            this.webSocket.sendProgress({ count: numberOfFiles, current: index })
+            const authors = await this.createAuthors(bookInfo)
+            const genres = await this.createGenres(bookInfo)
+            await this.createBook(bookInfo, authors, genres)
+        }
+    }
+
+    /**
      * Чтение информации из файла
      * @param filePath
      * @private
      */
     private async readInfo(filePath: string): Promise<BookInfo | undefined> {
-        const parser = new Parser()
-        const data = fs.readFileSync(filePath)
-        try {
-            const bookData = await parser.parseStringPromise(data)
-            const titleInfo = bookData.FictionBook.description[0]['title-info'][0]
-            return {
-                title: this.getBookTitle(titleInfo),
-                annotation: this.getBookAnnotation(titleInfo),
-                path: filePath,
-                authors: this.getAuthors(titleInfo),
-                genres: this.getGenres(titleInfo),
-                realiseDate: this.getRealiseDate(titleInfo)
-            }
-        } catch (e) {
-            return
+        const parser = new XMLParser()
+
+        const bookData = parser.parse(fs.readFileSync(filePath))
+        const titleInfo = bookData.FictionBook.description['title-info']
+        const binary = bookData.FictionBook.binary
+        return {
+            title: this.getBookTitle(titleInfo),
+            annotation: this.getBookAnnotation(titleInfo),
+            path: filePath,
+            authors: this.getAuthors(titleInfo),
+            genres: this.getGenres(titleInfo),
+            realiseDate: this.getRealiseDate(titleInfo),
+            image: this.getImage(binary)
         }
     }
 
@@ -96,7 +113,19 @@ export class ScanningService {
      * @private
      */
     private getBookTitle(titleInfo: any): string {
-        return titleInfo['book-title'][0]
+        return titleInfo['book-title']
+    }
+
+    /**
+     * Получить изображение
+     * @private
+     * @param binary
+     */
+    private getImage(binary: string | Array<string>): string {
+        if (Array.isArray(binary)) {
+            binary = binary[0]
+        }
+        return `data:image/png;base64,${binary}`
     }
 
     /**
@@ -108,13 +137,10 @@ export class ScanningService {
         if (!titleInfo.annotation) {
             return ''
         }
-        if (Array.isArray(titleInfo.annotation[0])) {
-            return titleInfo.annotation[0][0]
+        if (Array.isArray(titleInfo.annotation.p)) {
+            return titleInfo.annotation.p.join('\n')
         }
-        if (typeof titleInfo.annotation[0] === 'object' && titleInfo.annotation[0].p) {
-            return titleInfo.annotation[0].p.join('\n')
-        }
-        return titleInfo.annotation[0]
+        return titleInfo.annotation.p || ''
     }
 
     /**
@@ -122,6 +148,12 @@ export class ScanningService {
      * @private
      */
     private getGenres(titleInfo: any): CreateGenreDto[] {
+        if (!titleInfo.genre) {
+            return []
+        }
+        if (typeof titleInfo.genre === 'string') {
+            return [{ name: titleInfo.genre }]
+        }
         return titleInfo.genre.map((item: string): CreateGenreDto => {
             const value = item.trim()
             return {
@@ -135,16 +167,27 @@ export class ScanningService {
      * @private
      */
     private getAuthors(titleInfo: any): CreateAuthorDto[] {
-        return titleInfo.author.map(
-            (item: { 'first-name': string; 'last-name': string }): CreateAuthorDto => {
-                const firstName = Array.isArray(item['first-name']) ? item['first-name'][0] : ''
-                const lastName = Array.isArray(item['last-name']) ? item['last-name'][0] : ''
-                return {
-                    firstName,
-                    lastName
+        if (!titleInfo.author) {
+            return []
+        }
+        if (Array.isArray(titleInfo.author)) {
+            return titleInfo.author.map(
+                (item: { 'first-name': string; 'last-name': string }): CreateAuthorDto => {
+                    const firstName = item['first-name'] || ''
+                    const lastName = item['last-name'] || ''
+                    return {
+                        firstName,
+                        lastName
+                    }
                 }
+            )
+        }
+        return [
+            {
+                firstName: titleInfo.author['first-name'] || '',
+                lastName: titleInfo.author['last-name'] || ''
             }
-        )
+        ]
     }
 
     /**
@@ -197,16 +240,8 @@ export class ScanningService {
      */
     private getRealiseDate(titleInfo: any): Date {
         let date: Date = new Date()
-        if (titleInfo.date && titleInfo.date[0]) {
-            if (typeof titleInfo.date[0] === 'string') {
-                date = new Date(titleInfo.date[0])
-            }
-            if (titleInfo.date[0]['$'].value) {
-                date = new Date(titleInfo.date[0]['$'].value)
-            }
-            if (titleInfo.date[0]['_']) {
-                date = new Date(titleInfo.date[0]['_'])
-            }
+        if (titleInfo.date) {
+            date = new Date(titleInfo.date)
         }
         if (date.toString() === 'Invalid Date') {
             date = new Date()
@@ -238,7 +273,8 @@ export class ScanningService {
                 annotation: bookInfo.annotation,
                 realiseDate: bookInfo.realiseDate,
                 authors,
-                genres
+                genres,
+                image: bookInfo.image
             })
         } catch (e) {
             const b = {

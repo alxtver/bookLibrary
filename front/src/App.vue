@@ -22,6 +22,7 @@ import MainMenu from './components/menu/MainMenu.vue'
     }
     .main-view {
         margin: 10px;
+        width: 100%;
     }
 }
 </style>

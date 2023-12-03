@@ -20,6 +20,9 @@ export class Book {
     @Column()
     realiseDate: Date
 
+    @Column({ type: 'mediumtext', default: null })
+    image: string
+
     @ManyToMany(() => Author)
     @JoinTable()
     authors: Author[]

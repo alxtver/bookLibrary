@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { BooksService } from './books.service'
 import { CreateBookDto } from './dto/create-book.dto'
 import { UpdateBookDto } from './dto/update-book.dto'
+import { Book } from './entities/book.entity'
 
 @Controller('books')
 export class BooksController {
@@ -12,9 +13,12 @@ export class BooksController {
         return this.booksService.create(createBookDto)
     }
 
-    @Get()
-    findAll() {
-        return this.booksService.findAll()
+    /**
+     * Получить все книги
+     */
+    @Get('/getAll')
+    getAll(): Promise<Array<Book>> {
+        return this.booksService.getAll()
     }
 
     @Get(':id')

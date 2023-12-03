@@ -1,9 +1,10 @@
 import ky from 'ky'
+import { serverUrl } from '@/api/ApiSettings'
 
 class AuthorApi {
-    private prefix = 'http://localhost:3000/authors'
+    private url: string = '/authors'
     public async addAuthor(author: any): Promise<void> {
-        await ky.post('addAuthor', { json: author, prefixUrl: this.prefix })
+        await ky.post('addAuthor', { json: author, prefixUrl: serverUrl + this.url })
     }
 }
 
