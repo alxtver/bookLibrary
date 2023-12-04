@@ -16,7 +16,12 @@ export class BooksService {
     }
 
     async getAll(): Promise<Array<Book>> {
-        return await this.booksRepository.find()
+        return await this.booksRepository.find({
+            relations: {
+                authors: true,
+                genres: true
+            }
+        })
     }
 
     findOne(id: number) {

@@ -7,22 +7,47 @@ const { book } = toRefs(props)
 </script>
 
 <template>
-    <el-card class="card" :body-style="{ padding: '0px' }">
-        <img :src="book.image" class="image" />
-        <div style="padding: 14px">
-            <span>{{ book.title }}</span>
+    <el-card
+        class="card"
+        :body-style="{
+            padding: '0px',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+        }"
+    >
+        <div><img :src="book.image" class="image" :alt="book.title" /></div>
+        <div style="padding: 14px; display: flex; flex-direction: column">
+            <span class="title">{{ book.title }}</span>
+            <div style="margin-top: 5px; display: flex; flex-direction: column">
+                <span class="authors" v-for="author in book.authors" :key="author.id">{{
+                    `${author.lastName} ${author.firstName}`
+                }}</span>
+            </div>
             <div class="bottom">
-                <time class="time">sdfsd </time>
-                <el-button text class="button">Operating</el-button>
+                <time class="time"
+                    >{{
+                        new Date(book.realiseDate).toLocaleString([], {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })
+                    }}
+                </time>
             </div>
         </div>
     </el-card>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .card {
     width: 280px;
     margin: 10px;
+    cursor: pointer;
+    &:hover {
+        transform: scale(1.03);
+    }
 }
 .time {
     font-size: 12px;
@@ -33,8 +58,7 @@ const { book } = toRefs(props)
     margin-top: 13px;
     line-height: 12px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: flex-end;
 }
 
 .button {
@@ -45,5 +69,13 @@ const { book } = toRefs(props)
 .image {
     width: 100%;
     display: block;
+}
+.title {
+    font-weight: bold;
+    color: #606060;
+}
+.authors {
+    color: #606060;
+    font-size: 14px;
 }
 </style>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import BooksApi from '@/api/BooksApi'
+import BooksApi from '../api/BooksApi'
 import type { Book } from '../../../src/books/entities/book.entity'
-import BookCard from '@/components/bookcard/BookCard.vue'
+import BookCard from '../components/bookcard/BookCard.vue'
 
 const books = ref<Book[]>([])
 
