@@ -19,7 +19,8 @@ export class BooksService {
         return await this.booksRepository.find({
             relations: {
                 authors: true,
-                genres: true
+                genres: true,
+                images: true
             }
         })
     }

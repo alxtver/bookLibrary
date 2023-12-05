@@ -1,7 +1,8 @@
 import { Column, CreateDateColumn, Entity, JoinTable, PrimaryGeneratedColumn } from 'typeorm'
-import { ManyToMany } from 'typeorm'
+import { ManyToMany, OneToMany } from 'typeorm'
 import { Author } from '../../authors/entities/author.entity'
 import { Genre } from '../../genres/entities/genre.entity'
+import { Image } from '../../images/entities/image.entity'
 
 @Entity()
 export class Book {
@@ -20,14 +21,14 @@ export class Book {
     @Column()
     realiseDate: Date
 
-    @Column({ type: 'mediumtext', default: null })
-    image: string
+    @OneToMany(() => Image, (image) => image.book)
+    images: Array<Image>
 
     @ManyToMany(() => Author)
     @JoinTable()
-    authors: Author[]
+    authors: Array<Author>
 
     @ManyToMany(() => Genre)
     @JoinTable()
-    genres: Genre[]
+    genres: Array<Genre>
 }

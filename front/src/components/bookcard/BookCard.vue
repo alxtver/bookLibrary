@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import type { Book } from '../../../../src/books/entities/book.entity'
-import { toRefs } from 'vue'
+import { onMounted, ref, toRefs } from 'vue'
+import ImageApi from '@/api/ImageApi'
+import { Picture as IconPicture } from '@element-plus/icons-vue'
 
 const props = defineProps<{ book: Book }>()
 const { book } = toRefs(props)
+const image = ref<string | null>(null)
+
+onMounted(async (): Promise<void> => {
+    const images = await ImageApi.getImagesByBookId(book.value.id)
+    if (images.length) {
+        image.value = images[0].data
+    }
+})
 </script>
 
 <template>
@@ -17,7 +27,16 @@ const { book } = toRefs(props)
             justifyContent: 'space-between'
         }"
     >
-        <div><img :src="book.image" class="image" :alt="book.title" /></div>
+        <div style="height: 100%">
+            <img v-if="image" :src="image" class="image" :alt="book.title" />
+            <el-image v-else style="width: 100%; height: 100%">
+                <template #error>
+                    <div class="image-slot">
+                        <el-icon><icon-picture /></el-icon>
+                    </div>
+                </template>
+            </el-image>
+        </div>
         <div style="padding: 14px; display: flex; flex-direction: column">
             <span class="title">{{ book.title }}</span>
             <div style="margin-top: 5px; display: flex; flex-direction: column">
@@ -77,5 +96,15 @@ const { book } = toRefs(props)
 .authors {
     color: #606060;
     font-size: 14px;
+}
+.image-slot {
+    font-size: 200px;
+    color: lightgray;
+    display: flex;
+    justify-content: center;
+    align-self: center;
+    width: 100%;
+    height: 100%;
+    align-items: center;
 }
 </style>

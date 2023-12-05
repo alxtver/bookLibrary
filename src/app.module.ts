@@ -12,8 +12,10 @@ import { BooksModule } from './books/books.module'
 import { GenresModule } from './genres/genres.module'
 import { Book } from './books/entities/book.entity'
 import { Genre } from './genres/entities/genre.entity'
+import { Image } from './images/entities/image.entity'
 import { WebsocketGateway } from './websocket/websocket.gateway'
 import { WebsocketModule } from './websocket/websocket.module'
+import { ImagesModule } from './images/images.module'
 
 @Module({
     imports: [
@@ -28,7 +30,7 @@ import { WebsocketModule } from './websocket/websocket.module'
             username: process.env.DATABASE_USER,
             password: process.env.DATABASE_PASSWORD,
             database: 'book_library',
-            entities: [Author, Book, Genre],
+            entities: [Author, Book, Genre, Image],
             autoLoadEntities: true,
             synchronize: true
         }),
@@ -36,7 +38,8 @@ import { WebsocketModule } from './websocket/websocket.module'
         AuthorsModule,
         BooksModule,
         GenresModule,
-        WebsocketModule
+        WebsocketModule,
+        ImagesModule
     ],
     controllers: [AppController],
     providers: [AppService, WebsocketGateway]

@@ -10,6 +10,7 @@ import { Genre, Genres } from '../genres/entities/genre.entity'
 import { Book } from '../books/entities/book.entity'
 import { WebsocketGateway } from '../websocket/websocket.gateway'
 import { XMLParser } from 'fast-xml-parser'
+import { Image } from '../images/entities/image.entity'
 
 export interface BookInfo {
     title: string
@@ -32,6 +33,9 @@ export class ScanningService {
 
         @InjectRepository(Book)
         private booksRepository: Repository<Book>,
+
+        @InjectRepository(Image)
+        private imageRepository: Repository<Image>,
 
         private webSocket: WebsocketGateway
     ) {}
@@ -81,7 +85,8 @@ export class ScanningService {
             this.webSocket.sendProgress({ count: numberOfFiles, current: index })
             const authors = await this.createAuthors(bookInfo)
             const genres = await this.createGenres(bookInfo)
-            await this.createBook(bookInfo, authors, genres)
+            const images = await this.createImages(bookInfo)
+            await this.createBook(bookInfo, authors, genres, images)
         }
     }
 
@@ -254,12 +259,14 @@ export class ScanningService {
      * @param bookInfo
      * @param authors
      * @param genres
+     * @param images
      * @private
      */
     private async createBook(
         bookInfo: BookInfo,
         authors: Array<CreateAuthorDto & Author>,
-        genres: any
+        genres: Array<Genre>,
+        images: Array<Image>
     ): Promise<void> {
         const findBook = await this.booksRepository.findOne({
             where: { title: bookInfo.title, authors }
@@ -274,7 +281,7 @@ export class ScanningService {
                 realiseDate: bookInfo.realiseDate,
                 authors,
                 genres,
-                image: bookInfo.image
+                images
             })
         } catch (e) {
             const b = {
@@ -286,5 +293,11 @@ export class ScanningService {
             }
             console.error(e, b)
         }
+    }
+
+    private async createImages(bookInfo: BookInfo): Promise<Image[]> {
+        const image = new Image(bookInfo.image)
+        await this.imageRepository.save(image)
+        return [image]
     }
 }

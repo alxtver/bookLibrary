@@ -9,8 +9,6 @@ export class Book {
 
     public realiseDate!: Date
 
-    public image!: string
-
     public authors!: Author[]
 
     public genres!: Genre[]
