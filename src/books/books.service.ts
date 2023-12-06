@@ -19,14 +19,25 @@ export class BooksService {
         return await this.booksRepository.find({
             relations: {
                 authors: true,
-                genres: true,
-                images: true
+                genres: true
             }
         })
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} book`
+    /**
+     * Найти книгу по идентификатору
+     * @param id
+     */
+    async getById(id: string): Promise<Book> {
+        return (await this.booksRepository.findOne({
+            where: {
+                id
+            },
+            relations: {
+                authors: true,
+                genres: true
+            }
+        })) as Book
     }
 
     update(id: number, updateBookDto: UpdateBookDto) {

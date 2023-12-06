@@ -23,6 +23,7 @@ import MainMenu from './components/menu/MainMenu.vue'
     .main-view {
         margin: 10px;
         width: 100%;
+        height: calc(100% - 20px);
     }
 }
 </style>

@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common'
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query } from '@nestjs/common'
 import { BooksService } from './books.service'
 import { CreateBookDto } from './dto/create-book.dto'
 import { UpdateBookDto } from './dto/update-book.dto'
 import { Book } from './entities/book.entity'
+import { Request } from 'express'
 
 @Controller('books')
 export class BooksController {
@@ -21,9 +22,13 @@ export class BooksController {
         return this.booksService.getAll()
     }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.booksService.findOne(+id)
+    /**
+     * Получить книгу по идентификатору
+     * @param id
+     */
+    @Get('/getById')
+    async getById(@Query('id') id: string): Promise<Book> {
+        return await this.booksService.getById(id)
     }
 
     @Patch(':id')

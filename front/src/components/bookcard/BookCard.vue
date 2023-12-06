@@ -3,6 +3,7 @@ import type { Book } from '../../../../src/books/entities/book.entity'
 import { onMounted, ref, toRefs } from 'vue'
 import ImageApi from '@/api/ImageApi'
 import { Picture as IconPicture } from '@element-plus/icons-vue'
+import router from '@/router'
 
 const props = defineProps<{ book: Book }>()
 const { book } = toRefs(props)
@@ -14,6 +15,10 @@ onMounted(async (): Promise<void> => {
         image.value = images[0].data
     }
 })
+
+const onSelectBook = (): void => {
+    router.push(`/book/${book.value.id}`)
+}
 </script>
 
 <template>
@@ -26,6 +31,7 @@ onMounted(async (): Promise<void> => {
             flexDirection: 'column',
             justifyContent: 'space-between'
         }"
+        @click="onSelectBook"
     >
         <div style="height: 100%">
             <img v-if="image" :src="image" class="image" :alt="book.title" />

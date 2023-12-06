@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     BookCard: typeof import('./src/components/bookcard/BookCard.vue')['default']
+    BookPage: typeof import('./src/components/bookpage/BookPage.vue')['default']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElCol: typeof import('element-plus/es')['ElCol']
