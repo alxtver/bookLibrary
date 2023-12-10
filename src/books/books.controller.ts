@@ -1,18 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query } from '@nestjs/common'
+import { Controller, Get, Query, Res } from '@nestjs/common'
 import { BooksService } from './books.service'
-import { CreateBookDto } from './dto/create-book.dto'
-import { UpdateBookDto } from './dto/update-book.dto'
 import { Book } from './entities/book.entity'
-import { Request } from 'express'
+import { Response } from 'express'
 
 @Controller('books')
 export class BooksController {
     constructor(private readonly booksService: BooksService) {}
-
-    @Post()
-    create(@Body() createBookDto: CreateBookDto) {
-        return this.booksService.create(createBookDto)
-    }
 
     /**
      * Получить все книги
@@ -31,13 +24,24 @@ export class BooksController {
         return await this.booksService.getById(id)
     }
 
-    @Patch(':id')
-    update(@Param('id') id: string, @Body() updateBookDto: UpdateBookDto) {
-        return this.booksService.update(+id, updateBookDto)
+    /**
+     * Загрузить книгу по идентификатору
+     * @param res
+     * @param id
+     */
+    @Get('/loadBook')
+    async loadBook(@Res() res: Response, @Query('id') id: string): Promise<void> {
+        const stream = await this.booksService.loadBook(id)
+        res.contentType('application/fb2')
+        stream.pipe(res)
     }
 
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.booksService.remove(+id)
+    /**
+     * Получить книги по идентификатору автора
+     * @param id
+     */
+    @Get('/getByAuthorId')
+    async getByAuthorId(@Query('id') id: string): Promise<Array<Book>> {
+        return await this.booksService.getByAuthorId(id)
     }
 }

@@ -19,6 +19,25 @@ class BooksApi {
         })
         return response.json()
     }
+
+    public async download(id: string, fileName: string): Promise<void> {
+        const response = await ky.get('loadBook', {
+            prefixUrl: `${serverUrl}${this.url}`,
+            searchParams: { id }
+        })
+        const blob = await response.blob()
+        const href = URL.createObjectURL(blob)
+
+        const link = document.createElement('a')
+        link.href = href
+        link.setAttribute('download', fileName)
+
+        document.body.appendChild(link)
+        link.click()
+
+        document.body.removeChild(link)
+        URL.revokeObjectURL(href)
+    }
 }
 
 export default new BooksApi()

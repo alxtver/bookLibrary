@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Book } from '../../components/bookcard/types'
+import { Book } from '@/components/bookcard/types'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BooksApi from '@/api/BooksApi'
@@ -33,6 +33,10 @@ const loadImage = async (): Promise<void> => {
     const images = await ImageApi.getImagesByBookId(book.value.id)
     image.value = images.length ? images[0].data : null
 }
+
+const download = async (): Promise<void> => {
+    await BooksApi.download(book.value!.id, book.value!.fileName)
+}
 </script>
 
 <template>
@@ -40,12 +44,23 @@ const loadImage = async (): Promise<void> => {
         <img v-if="image" class="image" :src="image" :alt="book?.title" />
         <div class="book-info">
             <h1 class="label">{{ book.title }}</h1>
+
+            <div class="genres">
+                <span v-for="genre in book.genres" :key="genre.id">
+                    {{ genre.name }}
+                </span>
+            </div>
+
             <div class="authors">
                 <h2 v-for="author in book.authors" :key="author.id">
                     {{ `${author.firstName} ${author.lastName}` }}
                 </h2>
             </div>
             <p class="annotation">{{ book.annotation }}</p>
+
+            <div>
+                <el-button type="info" @click="download">Скачать</el-button>
+            </div>
         </div>
     </div>
 </template>
@@ -66,6 +81,15 @@ const loadImage = async (): Promise<void> => {
             display: flex;
             h2 + h2 {
                 margin-left: 20px;
+            }
+        }
+        .genres {
+            color: #7e7e7e;
+            font-weight: bold;
+            font-size: smaller;
+            margin-top: -20px;
+            span + span {
+                margin-left: 7px;
             }
         }
         .annotation {

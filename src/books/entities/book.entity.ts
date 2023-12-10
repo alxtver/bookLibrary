@@ -21,6 +21,12 @@ export class Book {
     @Column()
     realiseDate: Date
 
+    @Column()
+    path: string
+
+    @Column()
+    fileName: string
+
     @OneToMany(() => Image, (image) => image.book)
     images: Array<Image>
 

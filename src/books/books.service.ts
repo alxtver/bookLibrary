@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { CreateBookDto } from './dto/create-book.dto'
-import { UpdateBookDto } from './dto/update-book.dto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Book } from './entities/book.entity'
+import * as fs from 'fs'
 
 @Injectable()
 export class BooksService {
@@ -11,9 +10,6 @@ export class BooksService {
         @InjectRepository(Book)
         private booksRepository: Repository<Book>
     ) {}
-    create(createBookDto: CreateBookDto) {
-        return 'This action adds a new book'
-    }
 
     async getAll(): Promise<Array<Book>> {
         return await this.booksRepository.find({
@@ -40,11 +36,23 @@ export class BooksService {
         })) as Book
     }
 
-    update(id: number, updateBookDto: UpdateBookDto) {
-        return `This action updates a #${id} book`
+    async loadBook(id: string): Promise<fs.ReadStream> {
+        const book = (await this.booksRepository.findOne({
+            where: {
+                id
+            }
+        })) as Book
+        return fs.createReadStream(book.path)
     }
 
-    remove(id: number) {
-        return `This action removes a #${id} book`
+    /**
+     * Получить книгу по идентификатору автора
+     * @param id
+     */
+    async getByAuthorId(id: string): Promise<Array<Book>> {
+        return await this.booksRepository.find({
+            where: { authors: { id: id } },
+            relations: { authors: true }
+        })
     }
 }

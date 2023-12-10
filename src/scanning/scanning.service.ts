@@ -86,7 +86,7 @@ export class ScanningService {
             const authors = await this.createAuthors(bookInfo)
             const genres = await this.createGenres(bookInfo)
             const images = await this.createImages(bookInfo)
-            await this.createBook(bookInfo, authors, genres, images)
+            await this.createBook(bookInfo, authors, genres, images, file.path, file.name)
         }
     }
 
@@ -143,7 +143,9 @@ export class ScanningService {
             return ''
         }
         if (Array.isArray(titleInfo.annotation.p)) {
-            return titleInfo.annotation.p.join('\n')
+            return titleInfo.annotation.p
+                .map((item: any): string => (typeof item === 'string' ? item : ''))
+                .join('\n')
         }
         return titleInfo.annotation.p || ''
     }
@@ -157,7 +159,7 @@ export class ScanningService {
             return []
         }
         if (typeof titleInfo.genre === 'string') {
-            return [{ name: titleInfo.genre }]
+            return [{ name: Genres[titleInfo.genre] ? Genres[titleInfo.genre] : titleInfo.genre }]
         }
         return titleInfo.genre.map((item: string): CreateGenreDto => {
             const value = item.trim()
@@ -260,13 +262,17 @@ export class ScanningService {
      * @param authors
      * @param genres
      * @param images
+     * @param path
+     * @param fileName
      * @private
      */
     private async createBook(
         bookInfo: BookInfo,
         authors: Array<CreateAuthorDto & Author>,
         genres: Array<Genre>,
-        images: Array<Image>
+        images: Array<Image>,
+        path: string,
+        fileName: string
     ): Promise<void> {
         const findBook = await this.booksRepository.findOne({
             where: { title: bookInfo.title, authors }
@@ -281,7 +287,9 @@ export class ScanningService {
                 realiseDate: bookInfo.realiseDate,
                 authors,
                 genres,
-                images
+                images,
+                path: `${path}\\${fileName}`,
+                fileName
             })
         } catch (e) {
             const b = {
