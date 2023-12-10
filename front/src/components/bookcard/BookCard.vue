@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Book } from '../../../../src/books/entities/book.entity'
 import { onMounted, ref, toRefs } from 'vue'
 import ImageApi from '@/api/ImageApi'
 import { Picture as IconPicture } from '@element-plus/icons-vue'
 import router from '@/router'
+import type { Book } from "@/components/bookcard/types";
 
 const props = defineProps<{ book: Book }>()
 const { book } = toRefs(props)

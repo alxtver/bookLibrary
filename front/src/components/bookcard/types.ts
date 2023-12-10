@@ -33,3 +33,9 @@ export class Genre {
 
     public name!: string
 }
+
+export class Image {
+    public id!: string
+
+    public data!: string
+}

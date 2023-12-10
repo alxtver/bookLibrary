@@ -1,22 +1,30 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import BooksApi from '../api/BooksApi'
-import type { Book } from '../../../src/books/entities/book.entity'
+import { ref } from 'vue'
 import BookCard from '../components/bookcard/BookCard.vue'
+import { type Author, type Book } from '@/components/bookcard/types'
+import SearchField from '@/components/searchfield/SearchField.vue'
+import GlobalSearchApi from '@/api/GlobalSearchApi'
 
 const books = ref<Book[]>([])
+const authors = ref<Author[]>([])
 
-onMounted((): void => {
-    loadBooks()
-})
-
-const loadBooks = async (): Promise<void> => {
-    books.value = await BooksApi.getAllBooks()
+const onSearch = async (pattern: string): Promise<void> => {
+    if (pattern.length < 3) {
+        books.value = []
+        authors.value = []
+        return
+    }
+    const data = await GlobalSearchApi.search(pattern)
+    books.value = data.books
+    authors.value = data.authors
 }
 </script>
 
 <template>
-    <div style="height: 100%; overflow: auto">
+    <div style="display: flex; width: 100%; justify-content: center">
+        <search-field style="width: 50%" @changePattern="onSearch" />
+    </div>
+    <div v-if="books.length" style="height: 100%; overflow: auto">
         <div class="wrapper">
             <BookCard :book="book" v-for="book in books" :key="book.id" />
         </div>

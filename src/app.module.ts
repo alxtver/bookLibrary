@@ -16,6 +16,7 @@ import { Image } from './images/entities/image.entity'
 import { WebsocketGateway } from './websocket/websocket.gateway'
 import { WebsocketModule } from './websocket/websocket.module'
 import { ImagesModule } from './images/images.module'
+import { GlobalSearchModule } from './global-search/global-search.module';
 
 @Module({
     imports: [
@@ -39,7 +40,8 @@ import { ImagesModule } from './images/images.module'
         BooksModule,
         GenresModule,
         WebsocketModule,
-        ImagesModule
+        ImagesModule,
+        GlobalSearchModule
     ],
     controllers: [AppController],
     providers: [AppService, WebsocketGateway]

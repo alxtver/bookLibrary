@@ -1,6 +1,6 @@
 import ky from 'ky'
 import { serverUrl } from '../api/ApiSettings'
-import type { Image } from '../../../src/images/entities/image.entity'
+import type { Image } from '@/components/bookcard/types'
 
 class ImageApi {
     private url: string = '/images'
